@@ -1,58 +1,58 @@
-def add_time(start, duration):
-  pieces=start.split()
-  time=pieces[0]
-  ampm=pieces[1]
-  shours=time.split(':')[0]
-  sminutes=time.split(':')[1]
-  shours=int(shours)
-  sminutes=int(sminutes)
-  
-  dhours=duration.split(':')[0]
-  dminutes=duration.split(':')[1]
-  dhours=int(dhours)
-  dminutes=int(dminutes)
-  
-  new_h=shours+dhours
-  new_m=sminutes+dminutes
-  #print('before ',new_h,new_m)
-  
-  if new_m>59:
-      new_m-=60
-      new_h+=1
-  
-  if new_m < 10:
-      new_m='0'+str(new_m)
-  
-  check=new_h//12 
-  if check%2==0:
-      if ampm=='AM':
-          ampm='AM'
-      else: ampm='PM'
-  else:
-      if ampm=='AM':
-          ampm='PM'
-      else: 
-          ampm='AM'
-          new_h+=12
-      
-      
-  #print('after ',new_h,new_m)  
-  if new_h>12 and new_h<24:
-      new_h-=12
-      #print('inside ',new_h,new_m)
-      new_time=str(new_h)+':'+str(new_m)+' '+ampm
-  elif new_h>=24 and new_h<36:
-      new_h-=24
-      #print('inside ',new_h,new_m)
-      new_time=str(new_h)+':'+str(new_m)+' '+ampm+' (next day)'
-  elif new_h>=36:
-      d=new_h//24
-      new_h-=24*d
-      if new_h==0:
-          new_h=12
-      #print('inside ',new_h,new_m)
-      new_time=str(new_h)+':'+str(new_m)+' '+ampm+' ('+str(d)+' days later)'
-  elif new_h<=12:
-      new_time=str(new_h)+':'+str(new_m)+' '+ampm
-  
-  return new_time
+def add_time(start, duration, start_day=None):
+    # Parse start time
+    start_time, period = start.split()
+    start_hour, start_minute = map(int, start_time.split(':'))
+    
+    # Parse duration time
+    duration_hour, duration_minute = map(int, duration.split(':'))
+
+    # Calculate total minutes
+    total_minutes = start_hour * 60 + start_minute + duration_hour * 60 + duration_minute
+
+    # Calculate days and remaining minutes
+    days_later = total_minutes // (24 * 60)
+    remaining_minutes = total_minutes % (24 * 60)
+
+    # Calculate new hour and minute
+    new_hour, new_minute = divmod(remaining_minutes, 60)
+
+    # Determine period (AM/PM) and handle period change at 12:00
+    new_period = period
+    change = False
+    if (start_hour + new_hour) >= 12:
+        new_period = 'AM' if period == 'PM' else 'PM'
+    if period == 'PM' and new_period == 'AM':
+        change = True
+        days_later += 1
+    if new_hour >= 12:
+        new_hour -= 12
+    # Correct midnight representation  
+    if new_hour == 0:  
+        new_hour = 12
+
+    # Format new time
+    new_time = f"{new_hour}:{new_minute:02d} {new_period}"
+
+    # Add days later to output if applicable
+    if days_later == 1:
+        new_time += " (next day)"
+    elif days_later > 1:
+        new_time += f" ({days_later} days later)"
+
+    # Add start day if provided
+    if start_day:
+        start_day = start_day.capitalize()
+        if days_later > 0:
+            # Calculate new day index and adjust
+            days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+            start_day_index = days_of_week.index(start_day)
+            new_day_index = (start_day_index + days_later) % 7
+            new_day = days_of_week[new_day_index]
+
+            # Adjust output to include the day of the week
+            if days_later == 1:
+                new_time += f", {new_day} (next day)"
+            else:
+                new_time += f", {new_day}"
+
+    return new_time
